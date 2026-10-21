@@ -20,6 +20,8 @@ RUN apk add --no-cache \
 	mariadb-client		`# MariaDB database client`		\
 	curl
 
+RUN echo "memory_limit = 512M" > /etc/php83/conf.d/99-memory.ini
+
 # Symlink php from actual php83 (wp-cli searches for php)
 RUN ln -s /usr/bin/php83 /usr/bin/php
 

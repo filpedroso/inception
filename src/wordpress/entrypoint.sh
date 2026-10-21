@@ -23,7 +23,7 @@ if [ ! -f "$WP_PATH/wp-config.php" ]; then
         --dbpass="$MYSQL_PASSWORD" --dbhost=mariadb
 fi
 
-# 4. Instalação do site (é aqui que as tabelas são criadas no banco)
+# 4. Instalação do site (e criação das tabelas no banco)
 if ! wp core is-installed --path="$WP_PATH" --allow-root; then
     echo "[wordpress] installing site"
     wp core install --path="$WP_PATH" --allow-root --skip-email \
