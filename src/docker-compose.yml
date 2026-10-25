@@ -1,0 +1,63 @@
+# src/docker-compose.yml (lives next to .env)
+
+services:
+  mariadb:
+    build: ./mariaDB
+    image: mariadb
+    container_name: mariadb
+    env_file: .env
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - inception
+    restart: always
+
+  wordpress:
+    build: ./wordpress
+    image: wordpress
+    container_name: wordpress
+    env_file: .env
+    depends_on:
+      - mariadb
+    volumes:
+      - wordpress_data:/var/www/html
+    networks:
+      - inception
+    restart: always
+
+  nginx:
+    build: ./nginx
+    image: nginx
+    container_name: nginx
+    depends_on:
+      - wordpress
+    ports:
+      - "443:443"
+    volumes:
+      - wordpress_data:/var/www/html:ro
+    networks:
+      - inception
+    restart: always
+
+# Named volumes whose storage is a folder on the host (DATA_DIR comes from .env).
+# The host folders must exist before "up": Docker does not create them.
+volumes:
+  mariadb_data:
+    name: mariadb_data
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_DIR:?set DATA_DIR in .env}/mariadb
+  wordpress_data:
+    name: wordpress_data
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_DIR:?set DATA_DIR in .env}/wordpress
+
+networks:
+  inception:
+    name: inception
+    driver: bridge
