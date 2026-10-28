@@ -1,9 +1,9 @@
-# src/docker-compose.yml (lives next to .env)
+# srcs/docker-compose.yml (lives next to .env)
 
 services:
   mariadb:
-    build: ./mariaDB
-    image: mariadb
+    build: ./requirements/mariadb
+    image: mariadb:inception
     container_name: mariadb
     env_file: .env
     volumes:
@@ -11,14 +11,25 @@ services:
     networks:
       - inception
     restart: always
+    # Healthy only once the final server accepts connections (the first-run
+    # setup happens before it starts). It logs in as the app user so the server
+    # log isn't flooded with "Access denied" warnings; $$ leaves the variables
+    # to be expanded inside the container, from its env_file.
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -u\"$$MYSQL_USER\" -p\"$$MYSQL_PASSWORD\" --silent"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
 
   wordpress:
-    build: ./wordpress
-    image: wordpress
+    build: ./requirements/wordpress
+    image: wordpress:inception
     container_name: wordpress
     env_file: .env
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
     volumes:
       - wordpress_data:/var/www/html
     networks:
@@ -26,8 +37,8 @@ services:
     restart: always
 
   nginx:
-    build: ./nginx
-    image: nginx
+    build: ./requirements/nginx
+    image: nginx:inception
     container_name: nginx
     depends_on:
       - wordpress

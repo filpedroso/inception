@@ -1,9 +1,9 @@
-COMPOSE_FILE := docker-compose.yml
-ENV_FILE     := .env
+COMPOSE_FILE := srcs/docker-compose.yml
+ENV_FILE     := srcs/.env
 COMPOSE      := docker compose -f $(COMPOSE_FILE)
 CLEANER      := alpine:3.23
 
-# DATA_DIR is read from src/.env (the value must have no quotes there)
+# DATA_DIR is read from srcs/.env (the value must have no quotes there)
 DATA_DIR := $(shell grep '^DATA_DIR=' $(ENV_FILE) 2>/dev/null | tail -n1 | cut -d= -f2-)
 
 all: up

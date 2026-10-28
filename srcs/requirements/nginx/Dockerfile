@@ -8,7 +8,7 @@ RUN mkdir -p /etc/nginx/ssl /run/nginx && \
     -out /etc/nginx/ssl/nginx.crt \
     -subj "/CN=fpedroso.42.fr"
 
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY conf/nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 443
 

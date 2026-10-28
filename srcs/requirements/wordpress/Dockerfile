@@ -31,9 +31,9 @@ RUN curl -fsSL -o /usr/local/bin/wp												\
 
 WORKDIR /var/www/html
 
-COPY www.conf	/etc/php83/php-fpm.d/www.conf
+COPY conf/www.conf	/etc/php83/php-fpm.d/www.conf
 
-COPY entrypoint.sh /entrypoint.sh
+COPY tools/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 9000
