@@ -36,4 +36,5 @@ fi
 
 # executa o servidor, agora com rede e todas as configs do .cnf
 # familia exec substitui toda a imagem do processo. mariadb "se torna" o PID 1
-exec mariadbd --user=mysql
+# a porta vem do .env (MYSQL_PORT)
+exec mariadbd --user=mysql --port="${MYSQL_PORT:-3306}"

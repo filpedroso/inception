@@ -2,5 +2,5 @@
 user = mysql
 datadir = /var/lib/mysql
 socket = /run/mysqld/mysqld.sock
-port = 3306
+# a porta não fica aqui: vem do .env (MYSQL_PORT) e é passada pelo entrypoint
 bind-address = 0.0.0.0

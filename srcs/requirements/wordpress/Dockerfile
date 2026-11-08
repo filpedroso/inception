@@ -17,6 +17,7 @@ RUN apk add --no-cache \
 	php83-gd			`# GD graphics library`			\
 	php83-intl			`# Internationalization`		\
 	php83-opcache		`# PHP bytecode caching`		\
+	php83-tokenizer		`# Tokenizer (wp config set)`	\
 	mariadb-client		`# MariaDB database client`		\
 	curl
 

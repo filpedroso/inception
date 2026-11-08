@@ -42,8 +42,9 @@ services:
     container_name: nginx
     depends_on:
       - wordpress
+    # NGINX_PORT comes from .env; it must match "listen" in conf/nginx.conf
     ports:
-      - "443:443"
+      - "${NGINX_PORT:-443}:${NGINX_PORT:-443}"
     volumes:
       - wordpress_data:/var/www/html:ro
     networks:

@@ -60,6 +60,9 @@ and the two named volumes, and starts the containers with `restart: always`.
 - **Idempotent WordPress setup.** The entrypoint downloads WordPress, writes `wp-config.php`,
   installs the site and creates the second user only if each step was not done before, so
   restarts never reinstall anything.
+- **Ports from `.env`.** The nginx and MariaDB ports come from `srcs/.env`. On every start,
+  the WordPress entrypoint rewrites the values the first install stored in the volumes (the
+  database address and the site URL), so a port change only needs the edit and `make`.
 - **TLS.** A self-signed certificate is generated at build time; `ssl_protocols TLSv1.2 TLSv1.3`.
 - **Explicit image tags.** Images are named after their service and tagged `:inception`
   (`nginx:inception`, ...), which avoids an implicit `latest` tag and any clash with the

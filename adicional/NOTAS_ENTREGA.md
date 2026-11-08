@@ -20,6 +20,12 @@ Estado em 2026-10-28. Arquivo pessoal: **não levar para o repo da vogsphere**.
   - Sem tag, a imagem vira `:latest`, que é proibido.
   - A tag explícita também evita sobrescrever imagens oficiais do Docker Hub de mesmo nome.
   - A regra da "penúltima estável" vale só para o `FROM`.
+- **Portas** (para o item "Configuration modification" da régua, em que o avaliador pede para trocar a porta de um serviço):
+  - `NGINX_PORT` e `MYSQL_PORT` no `.env`. O MariaDB recebe a porta por `--port` no entrypoint, e o compose publica `NGINX_PORT`.
+  - A cada start, o entrypoint do WordPress reescreve o que a instalação gravou nos volumes: o `DB_HOST` no `wp-config.php` e a URL do site (`home`/`siteurl`) no banco. Sem isso, a troca da porta do banco quebraria a conexão, e a troca da porta do nginx faria o WP redirecionar o navegador para a porta antiga.
+  - O que editar em cada serviço está na seção "Changing a port" do DEV_DOC.
+  - Entrou o pacote `php83-tokenizer`: o `wp config set` usa `token_get_all()` para editar o `wp-config.php` com segurança (o `wp config create` só gera o arquivo e não precisa dele). Sem o pacote, o `wp` morria com exit 255 e o container entrava em loop de restart.
+  - Pegadinha: uma variável **exportada no shell** (ex.: `export NGINX_PORT=443`) tem prioridade sobre o `.env` na interpolação do compose. Na defesa, só editar o `.env`.
 - **Mantido de propósito**: `--skip-test-db`. Ele evita o banco `test` **e** os usuários anônimos (`''@localhost`), que roubariam o login local do `wpuser@'%'`. O `--skip-auth-anonymous-user` foi testado e descartado: não existe no MariaDB 11.4.
 - **Sem mudança**: `srcs/.env` com senhas (este repo é pessoal), `DATA_DIR` com o caminho do Mac, `alpine:3.23`.
 
@@ -32,6 +38,7 @@ Estado em 2026-10-28. Arquivo pessoal: **não levar para o repo da vogsphere**.
 - **Usuários do WP**: `jacare` (administrator) e `autor` (author).
 - **Persistência**: o conteúdo sobrevive a `make down` + `make`.
 - **Recuperação**: crash do nginx reinicia sozinho; subida fora de ordem se recupera.
+- **Troca de portas** (2026-11-08): nginx 443→8443, MariaDB 3306→3307 e php-fpm 9000→9001, cada uma só com as edições do DEV_DOC + `make`. O site continuou funcionando, o `/wp-admin/` redirecionou para a porta nova e a 443 parou de responder. Depois, a volta ao padrão funcionou, com o post intacto.
 
 ## 3. Checklist da entrega
 
@@ -73,11 +80,13 @@ Estado em 2026-10-28. Arquivo pessoal: **não levar para o repo da vogsphere**.
 - [ ] Entrar no admin; comentar com o author; editar uma página como admin.
 - [ ] Entrar no banco como root (`docker exec -it mariadb mariadb -u root -p`).
 - [ ] Reiniciar a VM, rodar `make` e conferir que tudo volta com os dados.
-- [ ] Saber explicar cada linha: o subject prevê uma pequena modificação ao vivo.
+- [ ] Ensaiar a troca de porta dos 3 serviços (seção "Changing a port" do DEV_DOC): editar, rodar `make` e conferir o site. Com nginx fora da 443, o acesso é `https://<login>.42.fr:<porta>`.
+- [ ] Saber explicar cada linha: a régua pede uma modificação ao vivo, e se ela não funcionar a avaliação acaba.
 
 ## 4. Melhorias a discutir
 
-- Docker secrets para as senhas (o subject "strongly recommends").
+- Docker secrets para as senhas (o subject só "strongly recommends"). **Decidido (2026-11-08): não usar.** O `srcs/.env` com as senhas fica fora do git e é criado na VM para a avaliação. Na defesa, justificar com a comparação "Secrets vs Environment Variables" do README.
+  - Confirmado na régua (preliminares): *"the use of a local .env file to store info is allowed, and/or also the use of docker secrets"*. Só reprova se houver senha no repositório git.
 - `.gitattributes` com `* text=auto eol=lf`, para o checkout no Windows não gerar CRLF.
 - Domínio vindo do `.env` em vez de fixo no `nginx.conf` e no Dockerfile.
 

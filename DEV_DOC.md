@@ -43,11 +43,13 @@ is not versioned: create it after cloning. Values are written without quotes.
 ```sh
 DATA_DIR=/home/fpedroso/data
 DOMAIN_NAME=fpedroso.42.fr
+NGINX_PORT=443
 
 MYSQL_ROOT_PASSWORD=<choose one>
 MYSQL_DATABASE=wordpress
 MYSQL_USER=wpuser
 MYSQL_PASSWORD=<choose one>
+MYSQL_PORT=3306
 
 WP_TITLE=Inception
 WP_ADMIN_USER=<must not contain "admin" or "Admin">
@@ -65,9 +67,11 @@ WP_USER_EMAIL=<email, different from the admin's>
 | `MYSQL_ROOT_PASSWORD` | mariadb | Password set for `root@localhost`. |
 | `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD` | mariadb, wordpress | The WordPress database and the account (`'user'@'%'`) that has all rights on it. |
 | `WP_*` | wordpress | Site title and the two WordPress users (administrator and author). |
+| `NGINX_PORT`, `MYSQL_PORT` | Compose, mariadb, wordpress | Ports of nginx and MariaDB (see [Changing a port](#changing-a-port)). |
 
-These values are applied only on the first start, when the volumes are empty. To apply
-changed values, reset the data with `make re`.
+Credentials, users and the site title are applied only on the first start, when the volumes
+are empty; to apply changed values, reset the data with `make re`. The ports are applied on
+every start.
 
 ### Domain
 
@@ -97,8 +101,10 @@ Startup sequence:
    WordPress user). Then it `exec`s the real `mariadbd`.
 2. Compose waits until the mariadb healthcheck (`mariadb-admin ping`) passes, because
    wordpress declares `depends_on: mariadb: condition: service_healthy`.
-3. **wordpress** starts. Each step runs only if it was not done before: download WordPress,
-   create `wp-config.php`, install the site, create the second user. Then it `exec`s
+3. **wordpress** starts. Each setup step runs only if it was not done before: download
+   WordPress, create `wp-config.php`, install the site, create the second user. On every
+   start it also syncs the database address (`DB_HOST` in `wp-config.php`) and the site URL
+   (`home` and `siteurl` options) with `MYSQL_PORT` and `NGINX_PORT`. Then it `exec`s
    `php-fpm83 -F`.
 4. **nginx** starts and serves `https://$DOMAIN_NAME`.
 
@@ -111,6 +117,24 @@ Startup sequence:
 | `make fclean` | `docker compose down -v --rmi all`, then empties `$DATA_DIR/mariadb` and `$DATA_DIR/wordpress` |
 | `make re` | `make fclean` then `make` |
 | `make ps` / `make logs` | `docker compose ps` / `logs -f` |
+
+### Changing a port
+
+Edit the places below, then run `make`: it rebuilds what changed and recreates the
+containers. No data is lost.
+
+| Service (default port) | What to edit |
+|---|---|
+| nginx (443) | `NGINX_PORT` in `srcs/.env` and `listen` in `srcs/requirements/nginx/conf/nginx.conf` |
+| mariadb (3306) | `MYSQL_PORT` in `srcs/.env` |
+| wordpress / php-fpm (9000) | `listen` in `srcs/requirements/wordpress/conf/www.conf` and `fastcgi_pass` in `srcs/requirements/nginx/conf/nginx.conf` |
+
+Some values are stored in the volumes during the first install: the database address in
+`wp-config.php` and the site URL in the database. The WordPress entrypoint rewrites them
+from `srcs/.env` on every start. Without that, after a MariaDB port change WordPress would
+look for the database on the old port, and after an nginx port change it would redirect
+browsers to the old one. With a port other than 443, the site is at
+`https://$DOMAIN_NAME:<port>`. The `EXPOSE` lines in the Dockerfiles are documentation only.
 
 ## Manage containers and volumes
 
